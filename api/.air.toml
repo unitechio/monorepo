@@ -1,0 +1,32 @@
+root = "."
+testdata_dir = "testdata"
+tmp_dir = "tmp"
+
+[build]
+  cmd = "go build -o tmp/main.exe ./cmd/server"
+  bin = "tmp/main.exe"
+
+  # hoặc nếu bạn muốn dùng build.go:
+  # cmd = "go run ./cmd/build/main.go"
+  # bin = "tmp/main.exe"
+
+  delay = 1000
+
+  exclude_dir = ["assets", "tmp", "vendor", "testdata"]
+  exclude_ext = ["md"]
+  exclude_regex = ["_test.go"]
+
+  include_ext = ["go", "tpl", "tmpl", "html"]
+
+  stop_on_error = true
+
+[color]
+  build = "yellow"
+  runner = "green"
+  watcher = "cyan"
+
+[misc]
+  clean_on_exit = true
+
+[screen]
+  clear_on_rebuild = false
