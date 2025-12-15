@@ -8,6 +8,8 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/unitechio/oss-backend/internal/infrastructure/database"
+	"github.com/unitechio/oss-backend/internal/repository"
 	"github.com/unitechio/oss-backend/internal/service"
 )
 
@@ -22,6 +24,13 @@ type Node struct {
 }
 
 func main() {
+	// Initialize Database
+	database.InitDB()
+
+	// Initialize Layers
+	pageRepo := repository.NewPageRepository()
+	service.InitPageService(pageRepo)
+
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
@@ -79,7 +88,20 @@ func getPage(c *gin.Context) {
 	slug := c.Param("slug")
 	lang := c.DefaultQuery("lang", "en") // Default to English
 
-	page := service.GetPageBySlug(slug, lang)
+	page, err := service.GetPageBySlug(slug, lang)
+	if err != nil {
+		// Differentiate between 404 and 500 if possible, for now just 500 or 404
+		// If using sql.ErrNoRows, we returns 404.
+		// Service currently returns err if GetPageBySlug fails.
+		// Repo returns generic error.
+		// Ideally we check error type.
+		if strings.Contains(err.Error(), "no rows") { // Crude check
+			c.JSON(http.StatusNotFound, gin.H{"error": "page not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 	if page == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "page not found"})
 		return

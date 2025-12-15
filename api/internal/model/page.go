@@ -1,45 +1,61 @@
 package model
 
-// I18nMap holds translations for a field, keyed by language code (e.g., "en", "vi").
-type I18nMap map[string]string
+import (
+	"encoding/json"
+)
 
-// Get returns the string for the requested language, defaulting to "en" or the first available.
-func (m I18nMap) Get(lang string) string {
-	if val, ok := m[lang]; ok {
-		return val
-	}
-	if val, ok := m["en"]; ok {
-		return val
-	}
-	for _, val := range m {
-		return val
-	}
-	return ""
-}
+// 1. Domain / DB layer (Go struct)
 
-// Page represents a full page structure.
+// 1.1 Page
 type Page struct {
-	Slug   string                 `json:"slug"`
-	Title  string                 `json:"title"` // Resolved title
-	Config map[string]interface{} `json:"config,omitempty"`
-	Blocks []Block                `json:"blocks"`
+	ID     int64  `db:"id"`
+	Code   string `db:"code"`   // home, about, contact
+	Slug   string `db:"slug"`   // /, /about
+	Status string `db:"status"` // draft, published
 }
 
-// Block represents a section of the page.
-type Block struct {
-	ID         string                 `json:"id"`
-	Type       string                 `json:"type"` // e.g., "hero", "grid"
-	Properties map[string]interface{} `json:"properties,omitempty"`
-	Items      []Item                 `json:"items,omitempty"`
-	Title      string                 `json:"title,omitempty"` // Resolved title
+// 1.2 Page SEO (multi-language)
+type PageSEO struct {
+	ID          int64  `db:"id"`
+	PageID      int64  `db:"page_id"`
+	Lang        string `db:"lang"` // vi, en
+	Title       string `db:"title"`
+	Description string `db:"description"`
+	OGTitle     string `db:"og_title"`
+	OGDesc      string `db:"og_description"`
+	OGImage     string `db:"og_image"`
+	Canonical   string `db:"canonical"`
 }
 
-// Item represents an individual content unit.
-type Item struct {
-	ID       string                 `json:"id"`
-	Title    string                 `json:"title,omitempty"`    // Resolved title
-	Subtitle string                 `json:"subtitle,omitempty"` // Resolved subtitle
-	Image    string                 `json:"image,omitempty"`
-	Link     string                 `json:"link,omitempty"`
-	Metadata map[string]interface{} `json:"metadata,omitempty"`
+// 1.3 Page Block (language independent)
+type PageBlock struct {
+	ID     int64  `db:"id"`
+	PageID int64  `db:"page_id"`
+	Code   string `db:"code"` // home_hero, about_intro
+	Type   string `db:"type"` // hero, text, image_text
+	Order  int    `db:"order"`
+	Status string `db:"status"` // active, inactive
+}
+
+// 1.4 Page Block Translation (multi-language)
+type PageBlockTranslation struct {
+	ID      int64           `db:"id"`
+	BlockID int64           `db:"block_id"`
+	Lang    string          `db:"lang"`
+	Data    json.RawMessage `db:"data_json"` // block content by type
+}
+
+// 1.5 Image SEO (reusable)
+type Image struct {
+	ID     int64  `db:"id"`
+	URL    string `db:"url"`
+	Width  int    `db:"width"`
+	Height int    `db:"height"`
+}
+
+type ImageTranslation struct {
+	ImageID int64  `db:"image_id"`
+	Lang    string `db:"lang"`
+	Alt     string `db:"alt"`
+	Title   string `db:"title"`
 }
