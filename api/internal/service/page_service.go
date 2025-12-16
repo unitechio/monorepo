@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 
-	"github.com/unitechio/oss-backend/internal/model"
-	"github.com/unitechio/oss-backend/internal/repository"
+	"github.com/unitechio/oss-monorepo/api/internal/model"
+	"github.com/unitechio/oss-monorepo/api/internal/repository"
 )
 
 var pageRepo *repository.PageRepository

@@ -2,15 +2,18 @@ package main
 
 import (
 	"embed"
+	"fmt"
 	"io/fs"
+	"log"
 	"net/http"
 	"strings"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/unitechio/oss-backend/internal/infrastructure/database"
-	"github.com/unitechio/oss-backend/internal/repository"
-	"github.com/unitechio/oss-backend/internal/service"
+	"github.com/unitechio/oss-monorepo/api/internal/config"
+	"github.com/unitechio/oss-monorepo/api/internal/infrastructure/database"
+	"github.com/unitechio/oss-monorepo/api/internal/repository"
+	"github.com/unitechio/oss-monorepo/api/internal/service"
 )
 
 //go:embed out/*
@@ -24,20 +27,36 @@ type Node struct {
 }
 
 func main() {
+	// Load configuration
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("Failed to load configuration: %v", err)
+	}
+
 	// Initialize Database
-	database.InitDB()
+	if err := database.InitDB(); err != nil {
+		log.Fatalf("Failed to initialize database: %v", err)
+	}
 
 	// Initialize Layers
 	pageRepo := repository.NewPageRepository()
 	service.InitPageService(pageRepo)
 
+	// Set Gin mode based on environment
+	if cfg.Server.Host == "0.0.0.0" && cfg.Server.Port == 8080 {
+		gin.SetMode(gin.DebugMode)
+	} else {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	r := gin.Default()
 
+	// Use CORS config from config
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept"},
-		AllowCredentials: true,
+		AllowOrigins:     cfg.CORS.AllowedOrigins,
+		AllowMethods:     cfg.CORS.AllowedMethods,
+		AllowHeaders:     cfg.CORS.AllowedHeaders,
+		AllowCredentials: cfg.CORS.AllowCredentials,
 	}))
 
 	// API Routes
@@ -71,7 +90,12 @@ func main() {
 		}
 	})
 
-	r.Run(":8080")
+	// Start server with config
+	serverAddr := cfg.Server.GetServerAddr()
+	fmt.Printf("Server starting on %s\n", serverAddr)
+	if err := r.Run(serverAddr); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
 }
 
 func getNodes(c *gin.Context) {

@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/unitechio/oss-backend/internal/infrastructure/database"
-	"github.com/unitechio/oss-backend/internal/model"
+	"github.com/unitechio/oss-monorepo/api/internal/infrastructure/database"
+	"github.com/unitechio/oss-monorepo/api/internal/model"
 )
 
 type PageRepository struct {
@@ -15,7 +15,11 @@ type PageRepository struct {
 }
 
 func NewPageRepository() *PageRepository {
-	return &PageRepository{DB: database.DB}
+	sqlDB, err := database.DB.DB()
+	if err != nil {
+		panic(fmt.Sprintf("failed to get sql.DB from gorm.DB: %v", err))
+	}
+	return &PageRepository{DB: sqlDB}
 }
 
 func (r *PageRepository) GetPageBySlug(ctx context.Context, slug string) (*model.Page, error) {
@@ -30,7 +34,7 @@ func (r *PageRepository) GetPageBySlug(ctx context.Context, slug string) (*model
 
 func (r *PageRepository) GetPageSEO(ctx context.Context, pageID int64, lang string) (*model.PageSEO, error) {
 	var seo model.PageSEO
-	query := `SELECT id, page_id, lang, title, description, og_title, og_description, og_image, canonical 
+	query := `SELECT id, page_id, lang, title, description, og_title, og_description, og_image, canonical
 			  FROM page_seo WHERE page_id = $1 AND lang = $2`
 	err := r.DB.QueryRowContext(ctx, query, pageID, lang).Scan(
 		&seo.ID, &seo.PageID, &seo.Lang,
@@ -50,7 +54,7 @@ func (r *PageRepository) GetPageSEO(ctx context.Context, pageID int64, lang stri
 }
 
 func (r *PageRepository) GetPageBlocks(ctx context.Context, pageID int64) ([]model.PageBlock, error) {
-	query := `SELECT id, page_id, code, type, block_order, status 
+	query := `SELECT id, page_id, code, type, block_order, status
 			  FROM page_block WHERE page_id = $1 AND status = 'active' ORDER BY block_order`
 	rows, err := r.DB.QueryContext(ctx, query, pageID)
 	if err != nil {
@@ -86,7 +90,7 @@ func (r *PageRepository) GetBlockTranslations(ctx context.Context, blockIDs []in
 	}
 	args[len(blockIDs)] = lang
 
-	query := fmt.Sprintf(`SELECT id, block_id, lang, data_json 
+	query := fmt.Sprintf(`SELECT id, block_id, lang, data_json
 			  FROM page_block_translation WHERE block_id IN (%s) AND lang = $%d`, placeholders, len(blockIDs)+1)
 
 	rows, err := r.DB.QueryContext(ctx, query, args...)

@@ -3,7 +3,7 @@ testdata_dir = "testdata"
 tmp_dir = "tmp"
 
 [build]
-  cmd = "go build -o tmp/main.exe ./cmd/server"
+  cmd = "go build -o tmp/main.exe ./api/cmd/server"
   bin = "tmp/main.exe"
 
   # hoặc nếu bạn muốn dùng build.go:
@@ -12,7 +12,7 @@ tmp_dir = "tmp"
 
   delay = 1000
 
-  exclude_dir = ["assets", "tmp", "vendor", "testdata"]
+  exclude_dir = ["assets", "tmp", "vendor", "testdata", "node_modules", ".next", "out", "build"]
   exclude_ext = ["md"]
   exclude_regex = ["_test.go"]
 
