@@ -1,2 +1,2 @@
-backend: cd api && air
+backend: cd server && air
 frontend: npm run dev

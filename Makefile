@@ -13,10 +13,9 @@ setup:
 	@go mod download
 	@go mod tidy
 	@echo "Creating necessary directories..."
-	@mkdir -p api/cmd/server/out
+	@mkdir -p server/web/dist
 	@mkdir -p tmp
-	@mkdir -p out
-	@if [ ! -f api/cmd/server/out/index.html ]; then echo "<html><body><h1>Backend Running (Dev Mode)</h1></body></html>" > api/cmd/server/out/index.html; fi
+	@if [ ! -f server/web/dist/index.html ]; then echo "<html><body><h1>Backend Running (Dev Mode)</h1></body></html>" > server/web/dist/index.html; fi
 	@echo "Setup completed!"
 	@echo ""
 	@echo "Note: Make sure you have:"
@@ -45,32 +44,26 @@ dev: prepare
 goreman: dev
 
 prepare:
-	@mkdir -p api/cmd/server/out
-	@if [ ! -f api/cmd/server/out/index.html ]; then echo "<html><body><h1>Backend Running (Dev Mode)</h1></body></html>" > api/cmd/server/out/index.html; fi
+	@mkdir -p server/web/dist
+	@if [ ! -f server/web/dist/index.html ]; then echo "<html><body><h1>Backend Running (Dev Mode)</h1></body></html>" > server/web/dist/index.html; fi
 
 backend: prepare
-	@go run ./api/cmd/server
+	@go run ./server/cmd/server
 
 frontend:
 	@npm install && npm run dev
 
 build-prod:
 	@echo "Building (Production)..."
-	@npm ci && npm run build
-	@echo "Copying assets..."
-	@rm -rf api/cmd/server/out
-	@cp -r out api/cmd/server/out
+	@npm ci && npm run embed:web:production
 	@echo "Building backend..."
-	@cd api && CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o bin/backend ./cmd/server
+	@cd server && CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o bin/backend ./cmd/server
 
 build-dev:
 	@echo "Building (Development)..."
-	@npm install && npm run build
-	@echo "Copying assets..."
-	@rm -rf api/cmd/server/out
-	@cp -r out api/cmd/server/out
+	@npm install && npm run embed:web:development
 	@echo "Building backend..."
-	@cd api && go build -o bin/backend ./cmd/server
+	@cd server && go build -o bin/backend ./cmd/server
 
 build: build-prod
 
@@ -83,10 +76,9 @@ docker-build-dev:
 docker-build: docker-build-prod
 
 clean:
-	@rm -rf api/bin
-	@rm -rf api/cmd/server/out
-	@rm -rf out
-	@rm -rf .next
+	@rm -rf server/bin
+	@rm -rf server/web/dist
+	@rm -rf dist
 
 up:
 	@docker-compose up -d

@@ -1,6 +1,9 @@
 package utils
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 type ErrorApp struct {
 	Code        int
@@ -59,6 +62,10 @@ func (e ErrorApp) Error() string {
 	return e.Description
 }
 
-func (e ErrorApp) Is(target ErrorApp) bool {
-	return e.Code == target.Code
+func (e ErrorApp) Is(target error) bool {
+	var other ErrorApp
+	if !errors.As(target, &other) {
+		return false
+	}
+	return e.Code == other.Code
 }

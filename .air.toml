@@ -3,7 +3,7 @@ testdata_dir = "testdata"
 tmp_dir = "tmp"
 
 [build]
-  cmd = "go build -o tmp/main.exe ./api/cmd/server"
+  cmd = "go build -o tmp/main.exe ./server/cmd/server"
   bin = "tmp/main.exe"
 
   # hoặc nếu bạn muốn dùng build.go:

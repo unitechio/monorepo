@@ -5,8 +5,12 @@
 
 @layer base {
   :root {
-    --primary: #059669;
-    --primary-hover: #047857;
+    --primary: #0f766e;
+    --primary-hover: #115e59;
+    --surface: 255 255 255 / 0.72;
+    --surface-strong: 255 255 255 / 0.9;
+    --surface-dark: 15 23 42 / 0.7;
+    --hero-glow: rgba(13, 148, 136, 0.18);
     --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
     --font-display: 'Outfit', system-ui, -apple-system, sans-serif;
 
@@ -61,6 +65,10 @@
 
   body {
     font-family: var(--font-sans);
+    background:
+      radial-gradient(circle at top left, var(--hero-glow), transparent 28%),
+      radial-gradient(circle at top right, rgba(251, 191, 36, 0.16), transparent 22%),
+      linear-gradient(180deg, rgba(248, 250, 252, 0.98), rgba(241, 245, 249, 0.94));
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
     font-size: 14px;
@@ -117,6 +125,13 @@
   .dark .rdp {
     background: #020617;
   }
+
+  .dark body {
+    background:
+      radial-gradient(circle at top left, rgba(20, 184, 166, 0.12), transparent 24%),
+      radial-gradient(circle at top right, rgba(234, 179, 8, 0.08), transparent 18%),
+      linear-gradient(180deg, rgba(2, 6, 23, 1), rgba(15, 23, 42, 0.98));
+  }
 }
 
 @layer components {
@@ -147,5 +162,7 @@
 
 @layer utilities {
   .text-balance { text-wrap: balance; }
-  .glass { @apply bg-white/70 backdrop-blur-md border border-white/20; }
+  .glass { @apply backdrop-blur-xl border border-white/20 shadow-[0_20px_60px_rgba(15,23,42,0.10)]; background: rgba(var(--surface)); }
+  .glass-strong { background: rgba(var(--surface-strong)); }
+  .glass-dark { background: rgba(var(--surface-dark)); }
 }

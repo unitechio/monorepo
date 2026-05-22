@@ -37,7 +37,7 @@ type MinioStorage struct {
 	bucketName string
 }
 
-func NewMinioStorage(cfg config.MinioConfig) (*MinioStorage, error) {
+func NewMinioStorage(cfg config.MinIOConfig) (*MinioStorage, error) {
 	if cfg.Endpoint == "" {
 		return nil, fmt.Errorf("minio endpoint is required")
 	}

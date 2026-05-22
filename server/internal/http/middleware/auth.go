@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/unitechio/oss-monorepo/server/pkg/apperr"
 	"github.com/unitechio/oss-monorepo/server/pkg/response"
 )
 
@@ -22,21 +23,21 @@ const ContextKeyEmail = "email"
 func JWTAuth(secret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if secret == "" {
-			response.Fail(c, http.StatusInternalServerError, "jwt secret is not configured")
+			response.FailError(c, apperr.New(http.StatusInternalServerError, "jwt secret is not configured"))
 			c.Abort()
 			return
 		}
 
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			response.Fail(c, http.StatusUnauthorized, "authorization header is missing")
+			response.FailError(c, apperr.Unauthorized("authorization header is missing"))
 			c.Abort()
 			return
 		}
 
 		parts := strings.SplitN(authHeader, " ", 2)
 		if len(parts) != 2 || !strings.EqualFold(parts[0], "bearer") {
-			response.Fail(c, http.StatusUnauthorized, "authorization header format must be Bearer {token}")
+			response.FailError(c, apperr.Unauthorized("authorization header format must be Bearer {token}"))
 			c.Abort()
 			return
 		}
@@ -48,19 +49,19 @@ func JWTAuth(secret string) gin.HandlerFunc {
 			return []byte(secret), nil
 		})
 		if err != nil || !token.Valid {
-			response.Fail(c, http.StatusUnauthorized, "invalid or expired token")
+			response.FailError(c, apperr.Unauthorized("invalid or expired token"))
 			c.Abort()
 			return
 		}
 
 		claims, ok := token.Claims.(*JWTClaims)
 		if !ok {
-			response.Fail(c, http.StatusUnauthorized, "invalid token claims")
+			response.FailError(c, apperr.Unauthorized("invalid token claims"))
 			c.Abort()
 			return
 		}
 		if claims.UserID == uuid.Nil {
-			response.Fail(c, http.StatusUnauthorized, "invalid token subject")
+			response.FailError(c, apperr.Unauthorized("invalid token subject"))
 			c.Abort()
 			return
 		}

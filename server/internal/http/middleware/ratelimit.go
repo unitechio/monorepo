@@ -2,11 +2,11 @@ package middleware
 
 import (
 	"fmt"
-	"net/http"
 	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/unitechio/oss-monorepo/server/pkg/apperr"
 	"github.com/unitechio/oss-monorepo/server/pkg/response"
 )
 
@@ -43,7 +43,7 @@ func RateLimit(rps int) gin.HandlerFunc {
 		c.Header("X-RateLimit-Reset", fmt.Sprintf("%d", v.resetAt.Unix()))
 		if v.count > rps {
 			mu.Unlock()
-			response.Fail(c, http.StatusTooManyRequests, "too many requests")
+			response.FailError(c, apperr.TooManyRequests("too many requests"))
 			c.Abort()
 			return
 		}

@@ -10,7 +10,7 @@ RUN --mount=type=cache,target=/root/.npm npm ci
 
 FROM frontend-deps AS frontend-build
 WORKDIR /workspace
-COPY tsconfig.json tsconfig.app.json tsconfig.node.json vite.config.ts index.html eslint.config.js ./
+COPY tsconfig.json tsconfig.app.json tsconfig.node.json vite.config.ts index.html eslint.config.mjs ./
 COPY public ./public
 COPY src ./src
 RUN npm run build:frontend:production

@@ -1,11 +1,10 @@
 package middleware
 
 import (
-	"errors"
 	"log/slog"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/unitechio/oss-monorepo/server/pkg/apperr"
 	"github.com/unitechio/oss-monorepo/server/pkg/response"
 )
 
@@ -18,25 +17,29 @@ func ErrorHandler(logger *slog.Logger) gin.HandlerFunc {
 		}
 
 		err := c.Errors.Last().Err
-		requestID, _ := c.Get("RequestID")
+		requestID, _ := c.Get(response.ContextKeyRequestID)
 		rid := toString(requestID)
-
-		var ae *apperr.AppError
-		if errors.As(err, &ae) {
-			if ae.Code >= 500 {
-				logger.Error("application error",
-					slog.String("request_id", rid),
-					slog.String("error", ae.Error()),
-				)
-			}
-			response.Fail(c, ae.Code, ae.Message)
-			return
+		appErr, ok := apperr.As(err)
+		if !ok {
+			appErr = apperr.Internal(err)
 		}
 
-		logger.Error("unhandled error",
+		logger.Error("request failed",
 			slog.String("request_id", rid),
+			slog.Int("status", appErr.Code),
+			slog.String("message", appErr.Message),
 			slog.String("error", err.Error()),
 		)
-		response.Fail(c, http.StatusInternalServerError, "an unexpected error occurred")
+		response.FailError(c, appErr)
 	}
+}
+
+func toString(v any) string {
+	if v == nil {
+		return ""
+	}
+	if s, ok := v.(string); ok {
+		return s
+	}
+	return ""
 }

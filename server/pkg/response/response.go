@@ -16,10 +16,14 @@
 package response
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/unitechio/oss-monorepo/server/pkg/apperr"
 )
+
+const ContextKeyRequestID = "RequestID"
 
 // ---------------------------------------------------------------------------
 // Envelope types
@@ -83,6 +87,26 @@ func Fail(c *gin.Context, code int, message string) {
 	respond(c, code, message, nil, &ErrorBody{Code: code, Message: message}, nil)
 }
 
+// FailError converts an application error chain into the standard error envelope.
+// Unknown errors are treated as internal errors and their details are not exposed.
+func FailError(c *gin.Context, err error) {
+	if err == nil {
+		InternalError(c)
+		return
+	}
+
+	var appErr *apperr.AppError
+	if errors.As(err, &appErr) {
+		respond(c, appErr.Code, appErr.Message, nil, &ErrorBody{
+			Code:    appErr.Code,
+			Message: appErr.Message,
+		}, nil)
+		return
+	}
+
+	InternalError(c)
+}
+
 // FailWithFields writes a 400 error envelope with per-field validation messages.
 func FailWithFields(c *gin.Context, message string, fields map[string]string) {
 	respond(c, http.StatusBadRequest, message, nil, &ErrorBody{
@@ -105,7 +129,7 @@ func InternalError(c *gin.Context) {
 // respond is the single write point for all JSON responses.
 // It injects the request_id from the gin context (set by RequestIDMiddleware).
 func respond(c *gin.Context, code int, message string, data any, errBody *ErrorBody, meta *Meta) {
-	requestID, _ := c.Get("RequestID")
+	requestID, _ := c.Get(ContextKeyRequestID)
 
 	payload := Envelope{
 		Success:   errBody == nil,

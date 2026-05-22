@@ -6,40 +6,29 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/unitechio/oss-monorepo/pkg/libhttp/response"
+	"github.com/unitechio/oss-monorepo/server/pkg/apperr"
+	"github.com/unitechio/oss-monorepo/server/pkg/response"
 )
 
-// TimeoutMiddleware adds a timeout to requests
 func TimeoutMiddleware(timeout time.Duration) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Create a context with timeout
 		ctx, cancel := context.WithTimeout(c.Request.Context(), timeout)
 		defer cancel()
 
-		// Replace request context
 		c.Request = c.Request.WithContext(ctx)
 
-		// Channel to signal completion
-		finished := make(chan struct{})
-
+		done := make(chan struct{})
 		go func() {
 			c.Next()
-			finished <- struct{}{}
+			close(done)
 		}()
 
 		select {
-		case <-finished:
-			// Request completed successfully
+		case <-done:
 			return
 		case <-ctx.Done():
-			// Request timed out
-			c.AbortWithStatusJSON(http.StatusRequestTimeout, response.Response{
-				Success: false,
-				Error: &response.ErrorInfo{
-					Code:    "TIMEOUT",
-					Message: "Request timeout",
-				},
-			})
+			c.Abort()
+			response.FailError(c, apperr.Wrap(http.StatusGatewayTimeout, "request timeout", ctx.Err()))
 		}
 	}
 }

@@ -30,14 +30,17 @@ type ServerConfig struct {
 	Port         int
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
+	IdleTimeout  time.Duration
 }
 
 type DatabaseConfig struct {
+	Enabled         bool
 	Host            string
 	Port            int
 	User            string
 	Password        string
-	DBName          string
+	Database        string
+	Debug           bool
 	SSLMode         string
 	MaxOpenConns    int
 	MaxIdleConns    int
@@ -169,11 +172,13 @@ func LoadConfig() (*Config, error) {
 			WriteTimeout: viper.GetDuration("SERVER_WRITE_TIMEOUT"),
 		},
 		Database: DatabaseConfig{
+			Enabled:         viper.GetBool("DB_ENABLED"),
 			Host:            viper.GetString("DB_HOST"),
 			Port:            viper.GetInt("DB_PORT"),
 			User:            viper.GetString("DB_USER"),
 			Password:        viper.GetString("DB_PASSWORD"),
-			DBName:          viper.GetString("DB_NAME"),
+			Database:        viper.GetString("DB_DATABASE"),
+			Debug:           viper.GetBool("DB_DEBUG"),
 			SSLMode:         viper.GetString("DB_SSLMODE"),
 			MaxOpenConns:    viper.GetInt("DB_MAX_OPEN_CONNS"),
 			MaxIdleConns:    viper.GetInt("DB_MAX_IDLE_CONNS"),
@@ -250,11 +255,12 @@ func setDefaults() {
 	viper.SetDefault("SERVER_WRITE_TIMEOUT", "30s")
 
 	// Database defaults
+	viper.SetDefault("DB_ENABLED", false)
 	viper.SetDefault("DB_HOST", "localhost")
 	viper.SetDefault("DB_PORT", 5432)
 	viper.SetDefault("DB_USER", "postgres")
 	viper.SetDefault("DB_PASSWORD", "postgres")
-	viper.SetDefault("DB_NAME", "oss_monorepo")
+	viper.SetDefault("DB_DATABASE", "oss_monorepo")
 	viper.SetDefault("DB_SSLMODE", "disable")
 	viper.SetDefault("DB_MAX_OPEN_CONNS", 25)
 	viper.SetDefault("DB_MAX_IDLE_CONNS", 5)
@@ -321,7 +327,7 @@ func setDefaults() {
 // GetDSN returns the database connection string
 func (c *DatabaseConfig) GetDSN() string {
 	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
-		c.Host, c.Port, c.User, c.Password, c.DBName, c.SSLMode)
+		c.Host, c.Port, c.User, c.Password, c.Database, c.SSLMode)
 }
 
 // GetRedisAddr returns the Redis address

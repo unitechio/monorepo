@@ -1,38 +1,33 @@
 package middleware
 
 import (
-	"net/http"
+	"fmt"
+	"log/slog"
 
 	"github.com/gin-gonic/gin"
-	"github.com/unitechio/oss-monorepo/pkg/libhttp/response"
-	"go.uber.org/zap"
-	"gorm.io/gorm/logger"
+	"github.com/unitechio/oss-monorepo/server/pkg/apperr"
+	"github.com/unitechio/oss-monorepo/server/pkg/response"
 )
 
-// RecoveryMiddleware recovers from panics and logs the error
-func RecoveryMiddleware() gin.HandlerFunc {
+func Recovery(logger *slog.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer func() {
 			if err := recover(); err != nil {
-				// Log the panic
-				logger.Error("Panic recovered",
-					zap.Any("error", err),
-					zap.String("path", c.Request.URL.Path),
-					zap.String("method", c.Request.Method),
-					zap.String("client_ip", c.ClientIP()),
+				requestID, _ := c.Get(response.ContextKeyRequestID)
+				rid := toString(requestID)
+				appErr := apperr.Internal(fmt.Errorf("panic: %v", err))
+
+				logger.Error("panic recovered",
+					slog.String("request_id", rid),
+					slog.Int("status", appErr.Code),
+					slog.String("message", appErr.Message),
+					slog.Any("error", err),
 				)
 
-				// Return error response
-				c.AbortWithStatusJSON(http.StatusInternalServerError, response.Response{
-					Success: false,
-					Error: &response.ErrorInfo{
-						Code:    "INTERNAL_ERROR",
-						Message: "Internal server error",
-					},
-				})
+				response.FailError(c, appErr)
+				c.Abort()
 			}
 		}()
-
 		c.Next()
 	}
 }

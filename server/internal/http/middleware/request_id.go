@@ -3,6 +3,7 @@ package middleware
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/unitechio/oss-monorepo/server/pkg/response"
 )
 
 func RequestIDMiddleware() gin.HandlerFunc {
@@ -11,7 +12,7 @@ func RequestIDMiddleware() gin.HandlerFunc {
 		if rid == "" {
 			rid = uuid.NewString()
 		}
-		c.Set("RequestID", rid)
+		c.Set(response.ContextKeyRequestID, rid)
 		c.Header("X-Request-ID", rid)
 		c.Next()
 	}
